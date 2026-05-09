@@ -2,18 +2,24 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ArrowRight } from "lucide-react";
-import { lessons } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLessons, resolveImageUrl } from "@/lib/api";
 import AudioButton from "@/components/AudioButton";
 import useSpeech from "@/hooks/useSpeech";
 
 const LessonPage = () => {
   const navigate = useNavigate();
   const { moduleId } = useParams();
-  const moduleLessons = lessons.filter((l) => l.moduleId === moduleId);
   const [current, setCurrent] = useState(0);
 
-  const lesson = moduleLessons[current];
+  // ── Busca lições do módulo no backend Flask ─────────────────────────────────
+  const { data: moduleLessons = [], isLoading } = useQuery({
+    queryKey: ["lessons", moduleId],
+    queryFn: () => fetchLessons(moduleId),
+    enabled: !!moduleId,
+  });
 
+  const lesson = moduleLessons[current];
   const { speak } = useSpeech("", false);
 
   useEffect(() => {
@@ -25,6 +31,14 @@ const LessonPage = () => {
       setTimeout(() => speak(text), 500);
     }
   }, [current, lesson, speak]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <span className="text-4xl animate-bounce">📖</span>
+      </div>
+    );
+  }
 
   if (!lesson) {
     return (
@@ -76,8 +90,9 @@ const LessonPage = () => {
             exit={{ x: -100, opacity: 0 }}
             className="flex flex-col items-center gap-6 w-full max-w-sm"
           >
+            {/* resolveImageUrl converte "/api/assets/xxx.png" → "http://localhost:5000/api/assets/xxx.png" */}
             <img
-              src={lesson.imageUrl}
+              src={resolveImageUrl(lesson.imageUrl)}
               alt={lesson.title}
               className="w-48 h-48 object-contain drop-shadow-lg"
             />

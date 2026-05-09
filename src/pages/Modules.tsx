@@ -1,12 +1,20 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
-import { modules } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { fetchModules } from "@/lib/api";
 import BottomNav from "@/components/BottomNav";
 import useSpeech from "@/hooks/useSpeech";
 
 const Modules = () => {
   const navigate = useNavigate();
+
+  // ── Busca módulos do backend Flask ──────────────────────────────────────────
+  const { data: modules = [], isLoading, isError } = useQuery({
+    queryKey: ["modules"],
+    queryFn: fetchModules,
+  });
+
   const speechText = modules
     .map((mod, i) => `Tópico ${i + 1}: ${mod.title}. ${mod.description}.`)
     .join(" ");
@@ -14,6 +22,24 @@ const Modules = () => {
   const { speak } = useSpeech(
     `Escolha um módulo para começar. ${speechText} Toque no que você quer aprender.`
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <span className="text-4xl animate-bounce">📚</span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
+        <span className="text-4xl mb-4">😕</span>
+        <p className="text-lg font-bold text-foreground">Não foi possível carregar os módulos.</p>
+        <p className="text-sm text-muted-foreground">Verifique se o servidor Flask está rodando.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">

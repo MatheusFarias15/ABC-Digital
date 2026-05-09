@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronLeft, Check, X } from "lucide-react";
-import { exercises } from "@/data/mockData";
+import { useQuery } from "@tanstack/react-query";
+import { fetchExercises, resolveImageUrl } from "@/lib/api";
 import AudioButton from "@/components/AudioButton";
 import useSpeech from "@/hooks/useSpeech";
 
@@ -15,20 +16,31 @@ const ExercisePage = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [score, setScore] = useState(0);
 
+  // ── Busca exercícios do módulo no backend Flask ─────────────────────────────
+  const { data: exercises = [], isLoading } = useQuery({
+    queryKey: ["exercises", moduleId],
+    queryFn: () => fetchExercises({ moduleId }),
+    enabled: !!moduleId,
+  });
+
   const exercise = exercises[currentIdx];
 
   const { speak } = useSpeech(
     exercise ? exercise.questionText : `Parabéns! Você acertou ${score} de ${exercises.length}. Muito bem!`
   );
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <span className="text-4xl animate-bounce">🎮</span>
+      </div>
+    );
+  }
+
   if (!exercise) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="text-8xl mb-6"
-        >
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-8xl mb-6">
           🎉
         </motion.div>
         <h1 className="text-3xl font-black text-foreground mb-2">Parabéns!</h1>
@@ -60,10 +72,8 @@ const ExercisePage = () => {
     if (correct) setScore((s) => s + 1);
     setShowFeedback(true);
 
-    // Speak feedback
     speak(correct ? "Muito bem! Você acertou!" : "Não foi dessa vez. Tente de novo na próxima!");
 
-    // Play feedback sound
     try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -127,7 +137,11 @@ const ExercisePage = () => {
                 onClick={() => handleSelect(option.id)}
                 className={`card-module flex items-center gap-4 border-3 ${borderClass}`}
               >
-                <img src={option.imageUrl} alt="" className="w-16 h-16 object-contain" />
+                <img
+                  src={resolveImageUrl(option.imageUrl)}
+                  alt=""
+                  className="w-16 h-16 object-contain"
+                />
                 <span className="text-lg font-black text-card-foreground">{option.content}</span>
                 {showFeedback && option.isCorrect && (
                   <Check className="ml-auto text-success" size={28} />
