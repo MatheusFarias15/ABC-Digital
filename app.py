@@ -9,8 +9,13 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///abc_digital.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ─── CORS: permite que o Vite (localhost:5173) acesse a API ──────────────────
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
+# ─── CORS: permite que o Vite acesse a API em desenvolvimento ──────────────
+CORS(app, origins=[
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+])
 
 db.init_app(app)
 
