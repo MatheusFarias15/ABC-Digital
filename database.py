@@ -52,7 +52,11 @@ class Lesson(db.Model):
             "orderIndex": self.order_index,
         }
 
+ 
 
+
+
+ 
 class Exercise(db.Model):
     __tablename__ = "exercises"
 
